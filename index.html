@@ -1,1 +1,220 @@
-<h1>Testing! The website is live.</h1>aa
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Special Surprise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --heart-color: #ff4d6d;
+            --bg-color: #ffffff;
+            --rose-color: #e63946; /* Pure deep red for the falling icons */
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+        }
+
+        /* Container for everything */
+        .stage {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        /* The Heart */
+        .heart-container {
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            user-select: none;
+        }
+
+        .heart {
+            background-color: var(--heart-color);
+            display: inline-block;
+            height: 50px;
+            width: 50px;
+            position: relative;
+            transform: rotate(-45deg);
+            transition: all 0.3s ease;
+        }
+
+        .heart:before,
+        .heart:after {
+            content: "";
+            background-color: var(--heart-color);
+            border-radius: 50%;
+            height: 100%;
+            position: absolute;
+            width: 100%;
+        }
+
+        .heart:before { top: -50%; left: 0; }
+        .heart:after { top: 0; left: 50%; }
+
+        /* Text inside the heart */
+        .click-text {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(45deg);
+            font-family: 'Great Vibes', cursive;
+            color: white;
+            font-size: 14px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 5;
+            transition: opacity 0.5s;
+        }
+
+        /* Nudge text under heart */
+        #nudge {
+            margin-top: 40px;
+            font-family: 'Great Vibes', cursive;
+            font-size: 2rem;
+            color: var(--heart-color);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* Ripple effect */
+        .ripple {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 77, 109, 0.4);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 1;
+            animation: rippleEffect 1s ease-out forwards;
+        }
+
+        @keyframes rippleEffect {
+            0% { width: 0; height: 0; opacity: 0.8; }
+            100% { width: 300vw; height: 300vw; opacity: 0; }
+        }
+
+        /* Rose animation */
+        .rose {
+            position: fixed;
+            top: -50px;
+            font-size: 28px;
+            z-index: 100;
+            pointer-events: none;
+            user-select: none;
+            color: var(--rose-color);
+            filter: drop-shadow(0 0 5px rgba(230, 57, 70, 0.5));
+            animation: fall linear forwards;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(110vh) rotate(360deg);
+            }
+        }
+
+        /* Exploding heart effect */
+        .exploded {
+            animation: explode 0.5s forwards;
+        }
+
+        @keyframes explode {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(5); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stage">
+        <div class="heart-container" id="heartBtn">
+            <div class="heart" id="heartElement"></div>
+            <div class="click-text" id="insideText">Click Me</div>
+        </div>
+        <div id="nudge">Click faster...</div>
+    </div>
+
+    <script>
+        const heartBtn = document.getElementById('heartBtn');
+        const heartElement = document.getElementById('heartElement');
+        const insideText = document.getElementById('insideText');
+        const nudge = document.getElementById('nudge');
+        
+        let clicks = 0;
+        const target = 20;
+        let scale = 1;
+
+        heartBtn.addEventListener('click', (e) => {
+            if (clicks >= target) return;
+
+            clicks++;
+            
+            // 3) Heart gets bigger
+            scale += 0.15;
+            heartBtn.style.transform = `scale(${scale})`;
+
+            // 4) Pulse wave
+            createRipple();
+
+            // 5) Nudge after 5 clicks
+            if (clicks === 5) {
+                nudge.style.opacity = '1';
+            }
+
+            // Explosion and Roses at 20
+            if (clicks === target) {
+                explodeHeart();
+            }
+        });
+
+        function createRipple() {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1000);
+        }
+
+        function explodeHeart() {
+            heartBtn.classList.add('exploded');
+            nudge.style.opacity = '0';
+            
+            // Start rose rain
+            for(let i = 0; i < 120; i++) {
+                setTimeout(createRose, i * 40);
+            }
+        }
+
+        function createRose() {
+            const rose = document.createElement('div');
+            rose.className = 'rose';
+            // Using a specific red rose emoji and applying styles
+            rose.innerHTML = '🌹'; 
+            rose.style.left = Math.random() * 100 + 'vw';
+            rose.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
+            // Keep visibility high for the red effect
+            rose.style.opacity = (Math.random() * 0.4) + 0.6;
+            document.body.appendChild(rose);
+            
+            // Clean up roses after animation
+            setTimeout(() => rose.remove(), 6000);
+        }
+    </script>
+</body>
+</html>
