@@ -10,6 +10,7 @@
             --heart-color: #ff4d6d;
             --bg-color: #ffffff;
             --rose-color: #e63946;
+            --stem-color: #1b4332;
         }
 
         body, html {
@@ -90,7 +91,7 @@
             transition: opacity 0.5s;
         }
 
-        /* Ripple effect across the whole page */
+        /* Ripple effect */
         .ripple {
             position: fixed;
             top: 50%;
@@ -110,29 +111,17 @@
             100% { width: 300vw; height: 300vw; opacity: 0; }
         }
 
-        .rose {
+        .rose-falling {
             position: fixed;
             top: -50px;
             font-size: 28px;
             z-index: 100;
             pointer-events: none;
-            user-select: none;
-            color: var(--rose-color);
-            filter: drop-shadow(0 0 5px rgba(230, 57, 70, 0.5));
             animation: fall linear forwards;
         }
 
         @keyframes fall {
             to { transform: translateY(110vh) rotate(360deg); }
-        }
-
-        .exploded {
-            animation: explode 0.5s forwards;
-        }
-
-        @keyframes explode {
-            0% { transform: scale(1); opacity: 1; }
-            100% { transform: scale(5); opacity: 0; }
         }
 
         /* Proposal Window Styles */
@@ -166,12 +155,6 @@
             margin: 0 0 10px 0;
         }
 
-        .proposal-window .decor {
-            font-size: 1.5rem;
-            margin-bottom: 20px;
-            color: var(--heart-color);
-        }
-
         #final-message {
             font-family: 'Segoe UI', sans-serif;
             color: #444;
@@ -199,15 +182,6 @@
             transition: transform 0.2s, background 0.2s;
         }
 
-        .option-btn:hover {
-            transform: scale(1.05);
-            background: #ff3355;
-        }
-
-        .option-btn:active {
-            transform: scale(0.95);
-        }
-
         .final-btn {
             background: var(--rose-color);
             color: white;
@@ -219,17 +193,7 @@
             cursor: pointer;
             margin-top: 15px;
             display: none;
-        }
-
-        /* Final Text Animation Styles */
-        #final-text-overlay {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 1000;
-            pointer-events: none;
-            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
 
         .pop-word {
@@ -239,12 +203,12 @@
             font-weight: bold;
             text-shadow: 0 0 20px rgba(255, 77, 109, 0.8);
             opacity: 0;
-            transform: scale(0.5);
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0.5);
-            width: max-content;
+            z-index: 1000;
+            pointer-events: none;
         }
 
         @keyframes wordPop {
@@ -253,14 +217,83 @@
             80% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
             100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
         }
+
+        /* FINAL BLACKOUT AND ORGANIC ROSE */
+        #black-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+            opacity: 0;
+            z-index: 2000;
+            display: none;
+            transition: opacity 2s ease;
+        }
+
+        .falling-heart-final {
+            position: fixed;
+            top: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 60px;
+            z-index: 2001;
+            filter: drop-shadow(0 0 20px var(--heart-color));
+        }
+
+        #rose-canvas {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100vw;
+            height: 100vh;
+            z-index: 2002;
+            pointer-events: none;
+        }
+
+        .drawing-path {
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 2000;
+            stroke-dashoffset: 2000;
+            filter: drop-shadow(0 0 12px rgba(27, 67, 50, 0.6));
+        }
+
+        @keyframes draw {
+            to { stroke-dashoffset: 0; }
+        }
+
+        .rose-bloom {
+            position: absolute;
+            transform: scale(0);
+            transform-origin: center center;
+            filter: drop-shadow(0 0 20px var(--rose-color));
+        }
+
+        .bloom-animate {
+            animation: bloomEffect 3s cubic-bezier(0.17, 0.67, 0.83, 0.67) forwards;
+        }
+
+        @keyframes bloomEffect {
+            0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+            40% { opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .petal {
+            transition: all 1.5s ease-out;
+        }
     </style>
 </head>
 <body>
 
     <div class="stage">
         <div class="heart-container" id="heartBtn">
-            <div class="heart" id="heartElement"></div>
-            <div class="click-text" id="insideText">Click Me</div>
+            <div class="heart"></div>
+            <div class="click-text">Click Me</div>
         </div>
         <div id="nudge">Click faster...</div>
     </div>
@@ -268,7 +301,6 @@
     <div id="proposal-container">
         <div class="proposal-window">
             <h2 id="proposal-title">Will you be my Valentine?</h2>
-            <div class="decor" id="proposal-decor">❤️✨</div>
             <div id="final-message">
                 hey babe hope you liked the little show i put up there im not very good at showing affection by words so hopefully that shows how much i love you visually you mean so much to me and im genunely glad i met you i know you like flowers so here are some
             </div>
@@ -278,45 +310,36 @@
                 <button class="option-btn" onclick="askReally()">Yes again</button>
                 <button class="option-btn" onclick="askReally()">Absolutely</button>
             </div>
-            <button class="final-btn" id="click-me-btn">click me</button>
+            <button class="final-btn" id="click-me-btn" onclick="triggerFinalSequence()">click me</button>
         </div>
     </div>
 
-    <div id="final-text-overlay"></div>
+    <div id="black-screen"></div>
+    <svg id="rose-canvas" viewBox="0 0 400 800" preserveAspectRatio="xMidYMax meet"></svg>
 
     <script>
         const heartBtn = document.getElementById('heartBtn');
-        const heartElement = document.getElementById('heartElement');
-        const insideText = document.getElementById('insideText');
         const nudge = document.getElementById('nudge');
         const proposalContainer = document.getElementById('proposal-container');
         const proposalTitle = document.getElementById('proposal-title');
         const optionsGrid = document.getElementById('options-grid');
-        const finalTextOverlay = document.getElementById('final-text-overlay');
         const finalMessage = document.getElementById('final-message');
         const finalBtn = document.getElementById('click-me-btn');
-        const proposalDecor = document.getElementById('proposal-decor');
+        const blackScreen = document.getElementById('black-screen');
+        const roseCanvas = document.getElementById('rose-canvas');
         
         let clicks = 0;
         const target = 20;
         let scale = 1;
 
-        heartBtn.addEventListener('click', (e) => {
+        heartBtn.addEventListener('click', () => {
             if (clicks >= target) return;
-
             clicks++;
             scale += 0.15;
             heartBtn.style.transform = `scale(${scale})`;
-
             createRipple();
-
-            if (clicks === 5) {
-                nudge.style.opacity = '1';
-            }
-
-            if (clicks === target) {
-                explodeHeart();
-            }
+            if (clicks === 5) nudge.style.opacity = '1';
+            if (clicks === target) explodeHeart();
         });
 
         function createRipple() {
@@ -327,26 +350,21 @@
         }
 
         function explodeHeart() {
-            heartBtn.classList.add('exploded');
+            heartBtn.style.display = 'none';
             nudge.style.opacity = '0';
-            
-            for(let i = 0; i < 120; i++) {
-                setTimeout(createRose, i * 40);
-            }
-
+            for(let i = 0; i < 60; i++) setTimeout(createFallingRose, i * 40);
             setTimeout(() => {
                 document.body.style.backgroundColor = '#d9ced2'; 
                 proposalContainer.style.top = '15%'; 
-            }, 3000);
+            }, 2000);
         }
 
-        function createRose() {
+        function createFallingRose() {
             const rose = document.createElement('div');
-            rose.className = 'rose';
+            rose.className = 'rose-falling';
             rose.innerHTML = '🌹'; 
             rose.style.left = Math.random() * 100 + 'vw';
             rose.style.animationDuration = (Math.random() * 3 + 2.5) + 's';
-            rose.style.opacity = (Math.random() * 0.4) + 0.6;
             document.body.appendChild(rose);
             setTimeout(() => rose.remove(), 6000);
         }
@@ -362,57 +380,142 @@
         function askSuperReally() {
             proposalTitle.innerText = "REALLYYYYYYYYY";
             optionsGrid.innerHTML = `
-                <button class="option-btn" onclick="startFinalSequence()">YESSSS</button>
-                <button class="option-btn" onclick="startFinalSequence()">YESSSSSSSSSSSSSSSS</button>
+                <button class="option-btn" onclick="startWordSequence()">YESSSS</button>
+                <button class="option-btn" onclick="startWordSequence()">YESSSSSSSSSSSSSSSS</button>
             `;
         }
 
-        function startFinalSequence() {
-            // Remove the window
+        function startWordSequence() {
             proposalContainer.style.opacity = '0';
             setTimeout(() => {
                 proposalContainer.style.display = 'none';
-                
-                // Start the "I LOVE YOU" sequence
-                const words = ["I", "LOVE", "YOU"];
-                words.forEach((word, index) => {
+                ["I", "LOVE", "YOU"].forEach((word, i) => {
                     setTimeout(() => {
-                        displayWord(word);
-                    }, index * 1500);
+                        const span = document.createElement('div');
+                        span.className = 'pop-word';
+                        span.innerText = word;
+                        span.style.animation = "wordPop 1.5s ease-in-out forwards";
+                        document.body.appendChild(span);
+                        createRipple();
+                        setTimeout(() => span.remove(), 1500);
+                    }, i * 1500);
                 });
-                
-                // Show the final message after the word animation is done
-                setTimeout(showFinalNote, (words.length * 1500) + 500);
-
-                // Continual rose rain
-                for(let i = 0; i < 150; i++) {
-                    setTimeout(createRose, i * 20);
-                }
+                setTimeout(showFinalNote, 5000);
             }, 500);
         }
 
-        function displayWord(text) {
-            const wordSpan = document.createElement('div');
-            wordSpan.className = 'pop-word';
-            wordSpan.innerText = text;
-            wordSpan.style.animation = "wordPop 1.5s ease-in-out forwards";
-            finalTextOverlay.appendChild(wordSpan);
-            createRipple();
-            setTimeout(() => wordSpan.remove(), 1500);
-        }
-
         function showFinalNote() {
-            // Setup the window for the message
             proposalTitle.innerText = "One last thing...";
-            proposalDecor.style.display = 'none';
             optionsGrid.style.display = 'none';
             finalMessage.style.display = 'block';
             finalBtn.style.display = 'inline-block';
-            
-            // Bring the window back
             proposalContainer.style.display = 'flex';
             proposalContainer.style.opacity = '1';
             proposalContainer.style.top = '15%';
+        }
+
+        function triggerFinalSequence() {
+            blackScreen.style.display = 'block';
+            blackScreen.offsetHeight;
+            blackScreen.style.opacity = '1';
+            
+            setTimeout(() => {
+                const h = document.createElement('div');
+                h.className = 'falling-heart-final';
+                h.innerHTML = '❤️';
+                document.body.appendChild(h);
+                
+                let p = -100;
+                const g = window.innerHeight - 50;
+                const iv = setInterval(() => {
+                    p += 7;
+                    h.style.top = p + 'px';
+                    if (p >= g) {
+                        clearInterval(iv);
+                        h.style.opacity = '0';
+                        growOrganicRose();
+                        setTimeout(() => h.remove(), 500);
+                    }
+                }, 16);
+            }, 1000);
+        }
+
+        function createSVGElement(tag, attrs) {
+            const el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+            for (let k in attrs) el.setAttribute(k, attrs[k]);
+            return el;
+        }
+
+        function growOrganicRose() {
+            const mainStemPath = "M200,800 C180,600 220,450 200,250";
+            const stem = createSVGElement("path", {
+                d: mainStemPath,
+                class: "drawing-path",
+                stroke: "#1b4332",
+                "stroke-width": "10"
+            });
+            stem.style.animation = "draw 3.5s cubic-bezier(0.4, 0, 0.2, 1) forwards";
+            roseCanvas.appendChild(stem);
+
+            const branchConfigs = [
+                { d: "M205,650 C240,630 270,640 290,580", delay: 1800, bloomX: 290, bloomY: 580, s: 0.8 },
+                { d: "M195,520 C160,500 130,510 110,460", delay: 2600, bloomX: 110, bloomY: 460, s: 0.8 },
+                { d: "M208,400 C250,350 280,380 310,320", delay: 3400, bloomX: 310, bloomY: 320, s: 0.9 },
+                { d: "M192,300 C150,250 120,280 90,220", delay: 4200, bloomX: 90, bloomY: 220, s: 0.9 }
+            ];
+
+            branchConfigs.forEach(cfg => {
+                setTimeout(() => {
+                    const b = createSVGElement("path", {
+                        d: cfg.d,
+                        class: "drawing-path",
+                        stroke: "#1b4332",
+                        "stroke-width": "6"
+                    });
+                    b.style.animation = "draw 1.8s ease-out forwards";
+                    roseCanvas.appendChild(b);
+                    setTimeout(() => createOrganicBloom(cfg.bloomX, cfg.bloomY, cfg.s), 1400);
+                }, cfg.delay);
+            });
+
+            setTimeout(() => createOrganicBloom(200, 250, 1.3), 5500);
+        }
+
+        function createOrganicBloom(x, y, scale) {
+            const bloomGroup = createSVGElement("g", {
+                transform: `translate(${x},${y}) scale(${scale})`,
+                class: "rose-bloom bloom-animate"
+            });
+
+            const bloomId = `grad-${Math.random().toString(36).substr(2, 9)}`;
+            const defs = createSVGElement("defs", {});
+            const grad = createSVGElement("radialGradient", { id: bloomId, cx: "50%", cy: "50%", r: "50%" });
+            grad.appendChild(createSVGElement("stop", { offset: "0%", "stop-color": "#ff758c" }));
+            grad.appendChild(createSVGElement("stop", { offset: "60%", "stop-color": "#e63946" }));
+            grad.appendChild(createSVGElement("stop", { offset: "100%", "stop-color": "#800e13" }));
+            defs.appendChild(grad);
+            bloomGroup.appendChild(defs);
+
+            const petalPaths = [
+                "M0,0 C-25,-15 -35,-50 0,-70 C35,-50 25,-15 0,0",
+                "M0,0 C-50,-10 -60,-60 -20,-85 C10,-75 10,-30 0,0",
+                "M0,0 C50,-10 60,-60 20,-85 C-10,-75 -10,-30 0,0",
+                "M0,0 C-30,15 -60,10 -70,-40 C-60,-80 -20,-60 0,0",
+                "M0,0 C30,15 60,10 70,-40 C60,-80 20,-60 0,0"
+            ];
+
+            petalPaths.forEach((d, i) => {
+                const p = createSVGElement("path", {
+                    d: d,
+                    class: "petal",
+                    fill: `url(#${bloomId})`,
+                    opacity: "0"
+                });
+                setTimeout(() => p.style.opacity = "1", i * 300);
+                bloomGroup.appendChild(p);
+            });
+
+            roseCanvas.appendChild(bloomGroup);
         }
     </script>
 </body>
